@@ -1,152 +1,178 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <limits>
 using namespace std;
-
 
 struct User {
     int userId;
     string name;
+    string email;
 };
 
 struct Bus {
     int busId;
-    string source;
-    string destination;
-    int seats;
+    string busRoute;
+    string driverName;
+    string from;
+    string to;
+    int totalSeats;
+    int availableSeats;
 };
-
 
 struct Booking {
     int bookingId;
     int userId;
     int busId;
+    int seatsBooked;
 };
-
 
 vector<User> users;
 vector<Bus> buses;
 vector<Booking> bookings;
-int userCounter = 1, busCounter = 1, bookingCounter = 1;
+int userIdCounter = 1, busIdCounter = 1, bookingIdCounter = 1;
 
-// Function to register a user
 void registerUser() {
-    User newUser;
-    newUser.userId = userCounter++;
+    User user;
+    user.userId = userIdCounter++;
     cout << "Enter name: ";
-    cin >> newUser.name;
-    users.push_back(newUser);
-    cout << "User registered successfully! User ID: " << newUser.userId << endl;
+    getline(cin >> ws, user.name);
+    cout << "Enter email: ";
+    getline(cin, user.email);
+    users.push_back(user);
+    cout << "User registered successfully! User ID: " << user.userId << endl;
 }
 
-// Function to add a bus
 void addBus() {
-    Bus newBus;
-    newBus.busId = busCounter++;
-    cout << "Enter source: ";
-    cin >> newBus.source;
-    cout << "Enter destination: ";
-    cin >> newBus.destination;
-    cout << "Enter number of seats: ";
-    cin >> newBus.seats;
-    buses.push_back(newBus);
-    cout << "Bus added successfully! Bus ID: " << newBus.busId << endl;
+    Bus bus;
+    bus.busId = busIdCounter++;
+    cout << "Enter the driver name: ";
+    getline(cin >> ws, bus.driverName);
+    cout << "Enter bus route number: ";
+    getline(cin, bus.busRoute);
+    cout << "Enter from: ";
+    getline(cin, bus.from);
+    cout << "Enter to: ";
+    getline(cin, bus.to);
+    cout << "Enter total seats: ";
+    cin >> bus.totalSeats;
+    bus.availableSeats = bus.totalSeats;
+    buses.push_back(bus);
+    cout << "Bus added successfully! Bus ID: " << bus.busId << endl;
+
+    for (int i = 0; i < 70; ++i) cout << "*";
+    cout << "\nDriver Name: " << bus.driverName
+         << " | From: " << bus.from
+         << " | To: " << bus.to
+         << " | Total Seats: " << bus.totalSeats << endl;
+    for (int i = 0; i < 70; ++i) cout << "*";
+    cout << endl;
 }
+
 void bookTicket() {
-    int userId, busId;
+    int userId, busId, seats;
     cout << "Enter User ID: ";
     cin >> userId;
-    cout << "Enter Bus ID: ";
-    cin >> busId;
 
-    // Check if user exists
-    bool userExists = false, busExists = false;
-    for (const auto &user : users) {
+    bool userExists = false;
+    for (const User &user : users) {
         if (user.userId == userId) {
             userExists = true;
             break;
         }
     }
 
-  
-    for (auto &bus : buses) {
-        if (bus.busId == busId) {
-            busExists = true;
-            if (bus.seats > 0) {
-                bus.seats--; // Reduce available seats
-                bookings.push_back({bookingCounter++, userId, busId});
-                cout << "Booking successful! Booking ID: " << bookingCounter - 1 << endl;
-            } else {
-                cout << "No seats available on this bus!" << endl;
-            }
-            break;
-        }
+    if (!userExists) {
+        cout << "Invalid User ID. Please register first.\n";
+        return;
     }
 
-    if (!userExists) cout << "Invalid User ID!" << endl;
-    if (!busExists) cout << "Invalid Bus ID!" << endl;
+    cout << "Enter Bus ID: ";
+    cin >> busId;
+    cout << "Enter number of seats to book: ";
+    cin >> seats;
+
+    for (Bus &bus : buses) {
+        if (bus.busId == busId) {
+            if (bus.availableSeats >= seats) {
+                bus.availableSeats -= seats;
+                Booking booking = {bookingIdCounter++, userId, busId, seats};
+                bookings.push_back(booking);
+                cout << "Booking successful! Booking ID: " << booking.bookingId << endl;
+                return;
+            } else {
+                cout << "Not enough seats available." << endl;
+                return;
+            }
+        }
+    }
+    cout << "Invalid Bus ID." << endl;
 }
 
-
-void cancelTicket() {
+void cancelBooking() {
     int bookingId;
     cout << "Enter Booking ID: ";
     cin >> bookingId;
 
-    bool bookingFound = false;
-    for (size_t i = 0; i < bookings.size(); ++i) {
-        if (bookings[i].bookingId == bookingId) {
-            bookingFound = true;
-            int busId = bookings[i].busId;
-            // Increment seats for the bus
-            for (auto &bus : buses) {
-                if (bus.busId == busId) {
-                    bus.seats++;
+    for (auto it = bookings.begin(); it != bookings.end(); ++it) {
+        if (it->bookingId == bookingId) {
+            for (Bus &bus : buses) {
+                if (bus.busId == it->busId) {
+                    bus.availableSeats += it->seatsBooked;
                     break;
                 }
             }
-            bookings.erase(bookings.begin() + i);
-            cout << "Booking canceled successfully!" << endl;
-            break;
+            bookings.erase(it);
+            cout << "Booking cancelled successfully!" << endl;
+            return;
         }
     }
-
-    if (!bookingFound) cout << "Invalid Booking ID!" << endl;
+    cout << "Invalid Booking ID." << endl;
 }
 
-
-void generateReports() {
-    cout << "Booking Summary:\n";
-    for (const auto &booking : bookings) {
-        cout << "Booking ID: " << booking.bookingId
-             << ", User ID: " << booking.userId
-             << ", Bus ID: " << booking.busId << endl;
+void generateReport() {
+    cout << "\nBooking Summary:\n";
+    if (bookings.empty()) {
+        cout << "No bookings yet.\n";
+        return;
     }
-    if (bookings.empty()) cout << "No bookings available!" << endl;
-}
 
+    for (const Booking &booking : bookings) {
+        cout << "Booking ID: " << booking.bookingId
+             << " | User ID: " << booking.userId
+             << " | Bus ID: " << booking.busId
+             << " | Seats Booked: " << booking.seatsBooked << endl;
+    }
+}
 
 int main() {
     int choice;
     do {
-        cout << "\nBus Reservation System\n";
+        cout << "\n========== Bus Reservation System ==========\n";
         cout << "1. Register User\n";
         cout << "2. Add Bus\n";
         cout << "3. Book Ticket\n";
-        cout << "4. Cancel Ticket\n";
-        cout << "5. Generate Reports\n";
+        cout << "4. Cancel Booking\n";
+        cout << "5. Generate Report\n";
         cout << "6. Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
+
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Invalid input. Please enter a valid number.\n";
+            continue;
+        }
 
         switch (choice) {
             case 1: registerUser(); break;
             case 2: addBus(); break;
             case 3: bookTicket(); break;
-            case 4: cancelTicket(); break;
-            case 5: generateReports(); break;
+            case 4: cancelBooking(); break;
+            case 5: generateReport(); break;
             case 6: cout << "Exiting system. Goodbye!\n"; break;
-            default: cout << "Invalid choice! Try again.\n";
+            default: cout << "Invalid choice. Please try again.\n";
         }
     } while (choice != 6);
 
