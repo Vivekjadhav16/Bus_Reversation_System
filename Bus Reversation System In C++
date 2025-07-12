@@ -1,0 +1,154 @@
+#include <iostream>
+#include <vector>
+#include <string>
+using namespace std;
+
+
+struct User {
+    int userId;
+    string name;
+};
+
+struct Bus {
+    int busId;
+    string source;
+    string destination;
+    int seats;
+};
+
+
+struct Booking {
+    int bookingId;
+    int userId;
+    int busId;
+};
+
+
+vector<User> users;
+vector<Bus> buses;
+vector<Booking> bookings;
+int userCounter = 1, busCounter = 1, bookingCounter = 1;
+
+// Function to register a user
+void registerUser() {
+    User newUser;
+    newUser.userId = userCounter++;
+    cout << "Enter name: ";
+    cin >> newUser.name;
+    users.push_back(newUser);
+    cout << "User registered successfully! User ID: " << newUser.userId << endl;
+}
+
+// Function to add a bus
+void addBus() {
+    Bus newBus;
+    newBus.busId = busCounter++;
+    cout << "Enter source: ";
+    cin >> newBus.source;
+    cout << "Enter destination: ";
+    cin >> newBus.destination;
+    cout << "Enter number of seats: ";
+    cin >> newBus.seats;
+    buses.push_back(newBus);
+    cout << "Bus added successfully! Bus ID: " << newBus.busId << endl;
+}
+void bookTicket() {
+    int userId, busId;
+    cout << "Enter User ID: ";
+    cin >> userId;
+    cout << "Enter Bus ID: ";
+    cin >> busId;
+
+    // Check if user exists
+    bool userExists = false, busExists = false;
+    for (const auto &user : users) {
+        if (user.userId == userId) {
+            userExists = true;
+            break;
+        }
+    }
+
+  
+    for (auto &bus : buses) {
+        if (bus.busId == busId) {
+            busExists = true;
+            if (bus.seats > 0) {
+                bus.seats--; // Reduce available seats
+                bookings.push_back({bookingCounter++, userId, busId});
+                cout << "Booking successful! Booking ID: " << bookingCounter - 1 << endl;
+            } else {
+                cout << "No seats available on this bus!" << endl;
+            }
+            break;
+        }
+    }
+
+    if (!userExists) cout << "Invalid User ID!" << endl;
+    if (!busExists) cout << "Invalid Bus ID!" << endl;
+}
+
+
+void cancelTicket() {
+    int bookingId;
+    cout << "Enter Booking ID: ";
+    cin >> bookingId;
+
+    bool bookingFound = false;
+    for (size_t i = 0; i < bookings.size(); ++i) {
+        if (bookings[i].bookingId == bookingId) {
+            bookingFound = true;
+            int busId = bookings[i].busId;
+            // Increment seats for the bus
+            for (auto &bus : buses) {
+                if (bus.busId == busId) {
+                    bus.seats++;
+                    break;
+                }
+            }
+            bookings.erase(bookings.begin() + i);
+            cout << "Booking canceled successfully!" << endl;
+            break;
+        }
+    }
+
+    if (!bookingFound) cout << "Invalid Booking ID!" << endl;
+}
+
+
+void generateReports() {
+    cout << "Booking Summary:\n";
+    for (const auto &booking : bookings) {
+        cout << "Booking ID: " << booking.bookingId
+             << ", User ID: " << booking.userId
+             << ", Bus ID: " << booking.busId << endl;
+    }
+    if (bookings.empty()) cout << "No bookings available!" << endl;
+}
+
+
+int main() {
+    int choice;
+    do {
+        cout << "\nBus Reservation System\n";
+        cout << "1. Register User\n";
+        cout << "2. Add Bus\n";
+        cout << "3. Book Ticket\n";
+        cout << "4. Cancel Ticket\n";
+        cout << "5. Generate Reports\n";
+        cout << "6. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1: registerUser(); break;
+            case 2: addBus(); break;
+            case 3: bookTicket(); break;
+            case 4: cancelTicket(); break;
+            case 5: generateReports(); break;
+            case 6: cout << "Exiting system. Goodbye!\n"; break;
+            default: cout << "Invalid choice! Try again.\n";
+        }
+    } while (choice != 6);
+
+    return 0;
+}
